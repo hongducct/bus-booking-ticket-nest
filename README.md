@@ -1,6 +1,6 @@
 # Bus Ticket Booking API
 
-Backend API cho hệ thống đặt vé xe khách, được xây dựng với NestJS và TypeORM.
+Backend API cho hệ thống đặt vé xe khách, được xây dựng với NestJS và TypeORM. hongducct
 
 ## Tính năng
 
