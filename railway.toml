@@ -4,10 +4,11 @@
 # ------------------------------
 
 [build]
-builder = "Nixpacks"
-
-# ⚙️ Build command (legacy-peer-deps được xử lý bởi .npmrc)
-buildCommand = "npm ci && npm run build"
+# Railway sẽ tự động detect Dockerfile nếu có trong root
+# Dockerfile đảm bảo dùng Node.js 20 và xử lý legacy-peer-deps
+# Nếu muốn dùng Nixpacks, xóa hoặc rename Dockerfile và uncomment dòng dưới:
+# builder = "Nixpacks"
+# buildCommand = "rm -rf node_modules/.cache 2>/dev/null || true && npm ci && npm run build"
 
 # (Tuỳ chọn) Nếu bạn muốn tự chạy migration mỗi lần build:
 # buildCommand = "npm install --legacy-peer-deps && npm run build && npm run migration:run"
