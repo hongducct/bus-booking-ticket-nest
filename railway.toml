@@ -6,8 +6,8 @@
 [build]
 builder = "Nixpacks"
 
-# ⚙️ Tránh lỗi peer dependency (Swagger x Nest 11)
-buildCommand = "npm install --legacy-peer-deps && npm run build"
+# ⚙️ Build command (legacy-peer-deps được xử lý bởi .npmrc)
+buildCommand = "npm ci && npm run build"
 
 # (Tuỳ chọn) Nếu bạn muốn tự chạy migration mỗi lần build:
 # buildCommand = "npm install --legacy-peer-deps && npm run build && npm run migration:run"
