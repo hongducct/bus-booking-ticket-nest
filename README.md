@@ -1,98 +1,143 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Bus Ticket Booking API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API cho hệ thống đặt vé xe khách, được xây dựng với NestJS và TypeORM.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tính năng
 
-## Description
+- 🔍 Tìm kiếm chuyến xe theo điểm đi, điểm đến, ngày đi
+- 🎫 Quản lý ghế ngồi (chọn ghế, giữ ghế, đặt ghế)
+- 📝 Đặt vé và quản lý đơn hàng
+- 🔎 Tra cứu vé theo mã đơn hàng, số điện thoại, email
+- 🚌 Quản lý nhà xe, tuyến đường, trạm dừng
+- 💳 Hỗ trợ nhiều phương thức thanh toán
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Công nghệ sử dụng
 
-## Project setup
+- **NestJS** - Framework Node.js
+- **TypeORM** - ORM cho database
+- **PostgreSQL** - Database
+- **class-validator** - Validation cho DTOs
+- **TypeScript** - Ngôn ngữ lập trình
 
+## Cài đặt
+
+### 1. Cài đặt dependencies
 ```bash
-$ npm install
+npm install --legacy-peer-deps
 ```
 
-## Compile and run the project
-
+### 2. Cấu hình Database
+Tạo file `.env` từ `.env.example`:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+DATABASE_URL=postgresql://username:password@localhost:5432/bus_ticket_db
+PORT=3000
+NODE_ENV=development
 ```
 
-## Run tests
-
+### 3. Chạy Migrations
 ```bash
-# unit tests
-$ npm run test
+# Chạy tất cả migrations
+npm run migration:run
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Xem trạng thái migrations
+npm run migration:show
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Seed Database (tùy chọn)
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Chạy ứng dụng
+```bash
+# Development
+npm run start:dev
 
-## Resources
+# Production
+npm run build
+npm run start:prod
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Migration Commands
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- `npm run migration:generate src/database/migrations/Name` - Tạo migration từ entities
+- `npm run migration:create src/database/migrations/Name` - Tạo migration file trống
+- `npm run migration:run` - Chạy tất cả migrations
+- `npm run migration:revert` - Revert migration cuối cùng
+- `npm run migration:show` - Xem trạng thái migrations
+- `npm run seed` - Seed dữ liệu mẫu
 
-## Support
+Xem chi tiết trong [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## API Endpoints
 
-## Stay in touch
+### Trips (Chuyến xe)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- `GET /api/trips/search?from=...&to=...&date=...&passengers=...` - Tìm kiếm chuyến xe
+- `GET /api/trips/:id` - Lấy thông tin chi tiết chuyến xe
+- `GET /api/trips/:id/seats` - Lấy danh sách ghế của chuyến xe
+- `POST /api/trips/:id/seats/hold` - Giữ ghế (body: `{ seatIds: string[] }`)
+- `POST /api/trips/:id/seats/release` - Giải phóng ghế (body: `{ seatIds: string[] }`)
 
-## License
+### Bookings (Đặt vé)
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `POST /api/bookings` - Tạo đơn đặt vé
+- `GET /api/bookings` - Lấy danh sách đơn hàng
+- `GET /api/bookings/:id` - Lấy thông tin đơn hàng
+- `GET /api/bookings/search?query=...` - Tìm kiếm đơn hàng
+- `PUT /api/bookings/:id/cancel` - Hủy đơn hàng
+- `PUT /api/bookings/:id/payment` - Cập nhật phương thức thanh toán
+
+### Stations (Trạm dừng)
+
+- `GET /api/stations` - Lấy danh sách trạm dừng
+- `GET /api/stations/popular-routes` - Lấy danh sách tuyến đường phổ biến
+
+## Cấu trúc Database
+
+### Entities
+
+- **Station** - Trạm dừng (bến xe)
+- **BusCompany** - Nhà xe
+- **Trip** - Chuyến xe
+- **Seat** - Ghế ngồi
+- **Booking** - Đơn đặt vé
+- **BookingSeat** - Ghế trong đơn đặt vé
+
+### Migrations
+
+Database sử dụng TypeORM migrations để quản lý schema. Tất cả migrations được lưu trong `src/database/migrations/`.
+
+**Lưu ý:** `synchronize: false` trong production - chỉ sử dụng migrations.
+
+## Dữ liệu mẫu
+
+Chạy `npm run seed` để seed dữ liệu mẫu bao gồm:
+- 9 trạm dừng
+- 6 nhà xe
+- 8 chuyến xe mẫu
+- Ghế ngồi cho mỗi chuyến xe
+
+## Kết nối Frontend
+
+Backend đã được cấu hình CORS để kết nối với frontend React tại:
+- `http://localhost:5173`
+- `http://localhost:3000`
+- `http://localhost:5174`
+
+## Port mặc định
+
+Server chạy tại port **3000** (có thể thay đổi qua biến môi trường `PORT`)
+
+## Tài liệu tham khảo
+
+- [QUICK_START.md](./QUICK_START.md) - Hướng dẫn bắt đầu nhanh
+- [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - Hướng dẫn quản lý migrations
+- [FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md) - Hướng dẫn tích hợp frontend
+
+## Lưu ý
+
+- **Database:** Sử dụng PostgreSQL, cần tạo database trước khi chạy migrations
+- **Migrations:** Luôn chạy migrations trước khi start app (`npm run migration:run`)
+- **Synchronize:** Đã tắt (`synchronize: false`) - chỉ sử dụng migrations trong production
+- **Seed:** Chạy `npm run seed` để thêm dữ liệu mẫu sau khi migrations
