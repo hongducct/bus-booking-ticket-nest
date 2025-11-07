@@ -1,28 +1,27 @@
 # railway.toml
 # ------------------------------
-# ✅ Railway Build Config for NestJS 11
+# ✅ Railway Build Config cho NestJS 11 + PostgreSQL + TypeORM
 # ------------------------------
 
 [build]
 builder = "Nixpacks"
 
-# ⚙️ Dòng này rất quan trọng: tránh lỗi npm ci / peer dependency
+# ⚙️ Tránh lỗi peer dependency (Swagger x Nest 11)
 buildCommand = "npm install --legacy-peer-deps && npm run build"
 
-# (Tuỳ chọn) nếu bạn có migration hoặc seed:
+# (Tuỳ chọn) Nếu bạn muốn tự chạy migration mỗi lần build:
 # buildCommand = "npm install --legacy-peer-deps && npm run build && npm run migration:run"
 
 [deploy]
-# ⚙️ Lệnh chạy app (NestJS compiled -> dist/main.js)
+# ⚙️ Lệnh start app
 startCommand = "npm run start:prod"
 
-# ⚙️ Railway sẽ restart container nếu app crash
-restartPolicyType = "on-failure"
+# (Không cần restartPolicyType nữa — Railway đã loại bỏ)
+# restartPolicyType = "on-failure"
 
-# (Tuỳ chọn) Port mặc định NestJS chạy
+# (Tuỳ chọn) Port
 port = 3000
 
 [variables]
-# (Optional) Nếu bạn muốn Railway tự inject ENV mặc định
 NODE_ENV = "production"
 PORT = "3000"
