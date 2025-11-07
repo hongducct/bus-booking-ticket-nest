@@ -25,7 +25,7 @@ export class BookingsService {
     private tripsRepository: Repository<Trip>,
   ) {}
 
-  async create(createBookingDto: CreateBookingDto) {
+  async create(createBookingDto: CreateBookingDto, userId?: string) {
     const { tripId, seats, customerName, customerPhone, customerEmail, pickupPoint, dropoffPoint } =
       createBookingDto;
 
@@ -72,9 +72,10 @@ export class BookingsService {
       tripId,
       customerName,
       customerPhone,
-      customerEmail,
-      pickupPoint,
-      dropoffPoint,
+      customerEmail: customerEmail || undefined,
+      userId: userId || undefined, // Set userId if user is logged in
+      pickupPoint: pickupPoint || undefined,
+      dropoffPoint: dropoffPoint || undefined,
       totalPrice,
       paymentMethod: PaymentMethod.CASH, // Default, can be updated
       status: BookingStatus.PENDING,
@@ -105,11 +106,36 @@ export class BookingsService {
     });
   }
 
-  async findAll() {
-    return this.bookingsRepository.find({
-      relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
-      order: { bookingDate: 'DESC' },
-    });
+  async findAll(userId?: string, userEmail?: string, userRole?: string) {
+    // Admin can see all bookings
+    if (userRole === 'admin') {
+      return this.bookingsRepository.find({
+        relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+        order: { bookingDate: 'DESC' },
+      });
+    }
+
+    // User can only see their own bookings (by userId or email)
+    const queryBuilder = this.bookingsRepository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.trip', 'trip')
+      .leftJoinAndSelect('trip.company', 'company')
+      .leftJoinAndSelect('trip.fromStation', 'fromStation')
+      .leftJoinAndSelect('trip.toStation', 'toStation')
+      .leftJoinAndSelect('booking.bookingSeats', 'bookingSeats')
+      .leftJoinAndSelect('bookingSeats.seat', 'seat')
+      .orderBy('booking.bookingDate', 'DESC');
+
+    if (userId) {
+      queryBuilder.where('booking.userId = :userId', { userId });
+    } else if (userEmail) {
+      queryBuilder.where('booking.customerEmail = :email', { email: userEmail });
+    } else {
+      // No user info, return empty array
+      return [];
+    }
+
+    return queryBuilder.getMany();
   }
 
   async findOne(id: string) {

@@ -48,6 +48,9 @@ export class Booking {
   @Column({ nullable: true })
   customerEmail: string;
 
+  @Column({ nullable: true, name: 'user_id', type: 'uuid' })
+  userId: string | null; // Optional: null if guest booking
+
   @Column({ nullable: true })
   pickupPoint: string;
 

@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { TripsModule } from './trips/trips.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { StationsModule } from './stations/stations.module';
+import { AuthModule } from './auth/auth.module';
 import { Station } from './entities/station.entity';
 import { BusCompany } from './entities/bus-company.entity';
 import { Trip } from './entities/trip.entity';
@@ -29,6 +30,7 @@ import { BookingSeat } from './entities/booking-seat.entity';
     TripsModule,
     BookingsModule,
     StationsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
