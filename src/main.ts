@@ -1,8 +1,61 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { DataSource } from 'typeorm';
+import { seedDatabase } from './database/seed';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+
+  // Enable CORS
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174', 'http://localhost:3001'],
+    credentials: true,
+  });
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: false, // Allow extra fields for now
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // Swagger API Documentation
+  const config = new DocumentBuilder()
+    .setTitle('Bus Ticket Booking API')
+    .setDescription('API documentation for Bus Ticket Booking System')
+    .setVersion('1.0')
+    .addTag('trips', 'Chuyến xe operations')
+    .addTag('bookings', 'Đặt vé operations')
+    .addTag('stations', 'Trạm dừng operations')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // Seed database on startup (only in development)
+  // Note: Run migrations first with: npm run migration:run
+  if (process.env.NODE_ENV !== 'production' && process.env.SEED_DB === 'true') {
+    try {
+      const dataSource = app.get(DataSource);
+      await seedDatabase(dataSource);
+    } catch (error) {
+      console.log('Database already seeded or error:', error.message);
+    }
+  }
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚌 Bus Ticket API is running on: http://localhost:${port}`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 bootstrap();

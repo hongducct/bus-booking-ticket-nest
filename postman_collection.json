@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "Bus Ticket API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Trips",
+      "item": [
+        {
+          "name": "Search Trips",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/trips/search?from=Hồ Chí Minh&to=Đà Lạt&date=2025-01-15&passengers=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "trips", "search"],
+              "query": [
+                { "key": "from", "value": "Hồ Chí Minh" },
+                { "key": "to", "value": "Đà Lạt" },
+                { "key": "date", "value": "2025-01-15" },
+                { "key": "passengers", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trip Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/trips/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "trips", ":id"],
+              "variable": [
+                { "key": "id", "value": "trip-uuid-here" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trip Seats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/trips/:id/seats",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "trips", ":id", "seats"],
+              "variable": [
+                { "key": "id", "value": "trip-uuid-here" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Hold Seats",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [\"seat-uuid-1\", \"seat-uuid-2\"]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/trips/:id/seats/hold",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "trips", ":id", "seats", "hold"],
+              "variable": [
+                { "key": "id", "value": "trip-uuid-here" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": \"trip-uuid-here\",\n  \"customerName\": \"Nguyễn Văn A\",\n  \"customerPhone\": \"0901234567\",\n  \"customerEmail\": \"test@example.com\",\n  \"pickupPoint\": \"Bến xe Miền Đông\",\n  \"dropoffPoint\": \"Bến xe Đà Lạt\",\n  \"seats\": [\n    { \"seatId\": \"seat-uuid-1\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/bookings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/bookings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Search Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/bookings/search?query=VX1234567890",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "bookings", "search"],
+              "query": [
+                { "key": "query", "value": "VX1234567890" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/bookings/:id/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "bookings", ":id", "cancel"],
+              "variable": [
+                { "key": "id", "value": "booking-uuid-here" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stations",
+      "item": [
+        {
+          "name": "Get All Stations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/stations",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "stations"]
+            }
+          }
+        },
+        {
+          "name": "Get Popular Routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/stations/popular-routes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "stations", "popular-routes"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
