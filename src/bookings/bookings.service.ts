@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -115,7 +116,7 @@ export class BookingsService {
       });
     }
 
-    // User can only see their own bookings (by userId or email)
+    // User can only see their own bookings (by userId OR email)
     const queryBuilder = this.bookingsRepository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.trip', 'trip')
@@ -126,7 +127,13 @@ export class BookingsService {
       .leftJoinAndSelect('bookingSeats.seat', 'seat')
       .orderBy('booking.bookingDate', 'DESC');
 
-    if (userId) {
+    // If user has userId, show bookings with userId OR email (for bookings made before registration)
+    if (userId && userEmail) {
+      queryBuilder.where(
+        '(booking.userId = :userId OR booking.customerEmail = :email)',
+        { userId, email: userEmail }
+      );
+    } else if (userId) {
       queryBuilder.where('booking.userId = :userId', { userId });
     } else if (userEmail) {
       queryBuilder.where('booking.customerEmail = :email', { email: userEmail });
@@ -138,7 +145,7 @@ export class BookingsService {
     return queryBuilder.getMany();
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string, userEmail?: string, userRole?: string) {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
       relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
@@ -148,7 +155,28 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
-    return booking;
+    // Admin can see all bookings
+    if (userRole === 'admin') {
+      return booking;
+    }
+
+    // User can only see their own bookings (by userId OR email)
+    if (userId && userEmail) {
+      if (booking.userId === userId || booking.customerEmail === userEmail) {
+        return booking;
+      }
+    } else if (userId && booking.userId === userId) {
+      return booking;
+    } else if (userEmail && booking.customerEmail === userEmail) {
+      return booking;
+    }
+
+    // If no user info or booking doesn't belong to user, throw forbidden
+    if (!userId && !userEmail) {
+      throw new ForbiddenException('You must be logged in to view this booking');
+    }
+
+    throw new ForbiddenException('You do not have permission to view this booking');
   }
 
   async findByOrderId(orderId: string) {
@@ -178,8 +206,8 @@ export class BookingsService {
     return booking;
   }
 
-  async cancel(id: string) {
-    const booking = await this.findOne(id);
+  async cancel(id: string, userId?: string, userEmail?: string, userRole?: string) {
+    const booking = await this.findOne(id, userId, userEmail, userRole);
 
     if (booking.status === BookingStatus.CANCELLED) {
       throw new BadRequestException('Booking is already cancelled');
@@ -203,8 +231,8 @@ export class BookingsService {
     return booking;
   }
 
-  async updatePaymentMethod(id: string, paymentMethod: PaymentMethod) {
-    const booking = await this.findOne(id);
+  async updatePaymentMethod(id: string, paymentMethod: PaymentMethod, userId?: string, userEmail?: string, userRole?: string) {
+    const booking = await this.findOne(id, userId, userEmail, userRole);
 
     booking.paymentMethod = paymentMethod;
     
@@ -214,6 +242,40 @@ export class BookingsService {
     }
 
     return this.bookingsRepository.save(booking);
+  }
+
+  async updateStatus(id: string, status: BookingStatus) {
+    console.log('BookingsService.updateStatus called:', { id, status, statusType: typeof status });
+    
+    const booking = await this.bookingsRepository.findOne({
+      where: { id },
+      relations: ['bookingSeats'],
+    });
+
+    if (!booking) {
+      console.error('Booking not found:', id);
+      throw new NotFoundException('Booking not found');
+    }
+
+    console.log('Current booking status:', booking.status);
+    console.log('Updating to status:', status);
+
+    booking.status = status;
+    const savedBooking = await this.bookingsRepository.save(booking);
+
+    console.log('Booking updated successfully:', { id: savedBooking.id, status: savedBooking.status });
+
+    // If cancelled, release seats
+    if (status === BookingStatus.CANCELLED) {
+      const seatIds = booking.bookingSeats.map((bs) => bs.seatId);
+      await this.seatsRepository.update(
+        { id: In(seatIds) },
+        { status: SeatStatus.AVAILABLE },
+      );
+      console.log('Seats released for cancelled booking');
+    }
+
+    return savedBooking;
   }
 }
 

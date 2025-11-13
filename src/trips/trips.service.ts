@@ -194,5 +194,206 @@ export class TripsService {
       await this.seatsRepository.save(seat);
     }
   }
+
+  async createTrip(createTripDto: any) {
+    const {
+      companyId,
+      fromStationId,
+      toStationId,
+      date,
+      departureTime,
+      arrivalTime,
+      duration,
+      price,
+      busType = BusType.SEAT,
+      totalSeats = 40,
+      amenities = [],
+    } = createTripDto;
+
+    // Verify company and stations exist
+    const company = await this.busCompaniesRepository.findOne({
+      where: { id: companyId },
+    });
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    const fromStation = await this.stationsRepository.findOne({
+      where: { id: fromStationId },
+    });
+    if (!fromStation) {
+      throw new Error('From station not found');
+    }
+
+    const toStation = await this.stationsRepository.findOne({
+      where: { id: toStationId },
+    });
+    if (!toStation) {
+      throw new Error('To station not found');
+    }
+
+    // Check if trip already exists for this date and route
+    const existingTrip = await this.tripsRepository.findOne({
+      where: {
+        companyId,
+        fromStationId,
+        toStationId,
+        date: new Date(date),
+        departureTime,
+      },
+    });
+
+    if (existingTrip) {
+      throw new Error('Trip already exists for this date and time');
+    }
+
+    // Create trip
+    const trip = this.tripsRepository.create({
+      companyId,
+      fromStationId,
+      toStationId,
+      date: new Date(date),
+      departureTime,
+      arrivalTime,
+      duration,
+      price,
+      busType,
+      totalSeats,
+      amenities,
+    });
+
+    const savedTrip = await this.tripsRepository.save(trip);
+
+    // Create seats for the trip
+    await this.createSeatsForTrip(savedTrip.id, totalSeats);
+
+    return this.findOne(savedTrip.id);
+  }
+
+  async createTripsBatch(createTripsBatchDto: any) {
+    const {
+      companyId,
+      fromStationId,
+      toStationId,
+      startDate,
+      days = 30,
+      departureTime,
+      arrivalTime,
+      duration,
+      price,
+      busType = BusType.SEAT,
+      totalSeats = 40,
+      amenities = [],
+    } = createTripsBatchDto;
+
+    const start = new Date(startDate);
+    const trips: Trip[] = [];
+    const errors: Array<{ date: string; error: string }> = [];
+
+    for (let i = 0; i < days; i++) {
+      const currentDate = new Date(start);
+      currentDate.setDate(start.getDate() + i);
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      try {
+        const trip = await this.createTrip({
+          companyId,
+          fromStationId,
+          toStationId,
+          date: dateStr,
+          departureTime,
+          arrivalTime,
+          duration,
+          price,
+          busType,
+          totalSeats,
+          amenities,
+        });
+        if (trip) {
+          trips.push(trip);
+        }
+      } catch (error: any) {
+        errors.push({ date: dateStr, error: error?.message || 'Unknown error' });
+      }
+    }
+
+    return {
+      success: trips.length,
+      failed: errors.length,
+      trips,
+      errors,
+    };
+  }
+
+  private async createSeatsForTrip(tripId: string, totalSeats: number) {
+    const seats: Partial<Seat>[] = [];
+    
+    // Floor 1 layout
+    const floor1Layout = [
+      ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'],
+      ['D1', 'D2', 'D3', 'D4', 'D5'],
+    ];
+    
+    floor1Layout.forEach((row, rowIndex) => {
+      row.forEach((seatNum) => {
+        seats.push({
+          tripId,
+          number: seatNum,
+          row: rowIndex,
+          floor: 1,
+          status: SeatStatus.AVAILABLE,
+        });
+      });
+    });
+
+    // Floor 2 layout
+    const floor2Layout = [
+      ['F1', 'F2', 'F3', 'F4', 'F5'],
+      ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'],
+    ];
+
+    floor2Layout.forEach((row, rowIndex) => {
+      row.forEach((seatNum) => {
+        seats.push({
+          tripId,
+          number: seatNum,
+          row: rowIndex,
+          floor: 2,
+          status: SeatStatus.AVAILABLE,
+        });
+      });
+    });
+
+    // Add more seats if needed
+    let seatCount = seats.length;
+    let floor = 1;
+    let row = 2;
+    let number = 1;
+
+    while (seatCount < totalSeats) {
+      const seatNum = `C${number}`;
+      seats.push({
+        tripId,
+        number: seatNum,
+        row,
+        floor,
+        status: SeatStatus.AVAILABLE,
+      });
+
+      seatCount++;
+      number++;
+
+      if (number > 6) {
+        number = 1;
+        row++;
+        if (row > 3) {
+          row = 0;
+          floor = floor === 1 ? 2 : 1;
+        }
+      }
+    }
+
+    await this.seatsRepository.save(seats);
+  }
 }
 

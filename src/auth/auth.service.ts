@@ -99,5 +99,40 @@ export class AuthService {
   async validateUser(userId: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id: userId } });
   }
+
+  async createAdmin(createAdminDto: { email: string; password: string; name?: string; phone?: string }) {
+    const { email, password, name, phone } = createAdminDto;
+
+    // Check if user already exists
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create admin user
+    const admin = this.usersRepository.create({
+      email,
+      password: hashedPassword,
+      name: name || undefined,
+      phone: phone || undefined,
+      role: UserRole.ADMIN,
+    });
+
+    await this.usersRepository.save(admin);
+
+    return {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      phone: admin.phone,
+      role: admin.role,
+    };
+  }
 }
 
