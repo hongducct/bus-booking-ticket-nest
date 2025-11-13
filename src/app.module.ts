@@ -9,7 +9,6 @@ import { StationsModule } from './stations/stations.module';
 import { AuthModule } from './auth/auth.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { Station } from './entities/station.entity';
-import { BusCompany } from './entities/bus-company.entity';
 import { Trip } from './entities/trip.entity';
 import { Seat } from './entities/seat.entity';
 import { Booking } from './entities/booking.entity';

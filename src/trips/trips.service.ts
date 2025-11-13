@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Trip } from '../entities/trip.entity';
 import { Station } from '../entities/station.entity';
-import { BusCompany } from '../entities/bus-company.entity';
 import { Seat, SeatStatus } from '../entities/seat.entity';
 import { SearchTripsDto } from './dto/search-trips.dto';
 import { BusType } from '../entities/trip.entity';
@@ -15,8 +14,6 @@ export class TripsService {
     private tripsRepository: Repository<Trip>,
     @InjectRepository(Station)
     private stationsRepository: Repository<Station>,
-    @InjectRepository(BusCompany)
-    private busCompaniesRepository: Repository<BusCompany>,
     @InjectRepository(Seat)
     private seatsRepository: Repository<Seat>,
   ) {}
@@ -51,7 +48,6 @@ export class TripsService {
     // Use date string directly for comparison (PostgreSQL handles date comparison well)
     const queryBuilder = this.tripsRepository
       .createQueryBuilder('trip')
-      .leftJoinAndSelect('trip.company', 'company')
       .leftJoinAndSelect('trip.fromStation', 'fromStation')
       .leftJoinAndSelect('trip.toStation', 'toStation')
       .where('trip.fromStationId = :fromId', { fromId: fromStation.id })
@@ -99,8 +95,6 @@ export class TripsService {
     // Sort
     if (sortBy === 'price') {
       queryBuilder.orderBy('trip.price', 'ASC');
-    } else if (sortBy === 'rating') {
-      queryBuilder.orderBy('company.rating', 'DESC');
     } else {
       queryBuilder.orderBy('trip.departureTime', 'ASC');
     }
@@ -151,7 +145,7 @@ export class TripsService {
   async findOne(id: string) {
     return this.tripsRepository.findOne({
       where: { id },
-      relations: ['company', 'fromStation', 'toStation'],
+      relations: ['fromStation', 'toStation'],
     });
   }
 
@@ -197,7 +191,6 @@ export class TripsService {
 
   async createTrip(createTripDto: any) {
     const {
-      companyId,
       fromStationId,
       toStationId,
       date,
@@ -210,14 +203,7 @@ export class TripsService {
       amenities = [],
     } = createTripDto;
 
-    // Verify company and stations exist
-    const company = await this.busCompaniesRepository.findOne({
-      where: { id: companyId },
-    });
-    if (!company) {
-      throw new Error('Company not found');
-    }
-
+    // Verify stations exist
     const fromStation = await this.stationsRepository.findOne({
       where: { id: fromStationId },
     });
@@ -235,7 +221,6 @@ export class TripsService {
     // Check if trip already exists for this date and route
     const existingTrip = await this.tripsRepository.findOne({
       where: {
-        companyId,
         fromStationId,
         toStationId,
         date: new Date(date),
@@ -249,7 +234,6 @@ export class TripsService {
 
     // Create trip
     const trip = this.tripsRepository.create({
-      companyId,
       fromStationId,
       toStationId,
       date: new Date(date),
@@ -272,7 +256,6 @@ export class TripsService {
 
   async createTripsBatch(createTripsBatchDto: any) {
     const {
-      companyId,
       fromStationId,
       toStationId,
       startDate,
@@ -297,7 +280,6 @@ export class TripsService {
 
       try {
         const trip = await this.createTrip({
-          companyId,
           fromStationId,
           toStationId,
           date: dateStr,

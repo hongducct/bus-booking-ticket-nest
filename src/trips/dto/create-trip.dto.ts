@@ -3,10 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BusType } from '../../entities/trip.entity';
 
 export class CreateTripDto {
-  @ApiProperty({ example: 'uuid-of-company' })
-  @IsString()
-  companyId: string;
-
   @ApiProperty({ example: 'uuid-of-from-station' })
   @IsString()
   fromStationId: string;

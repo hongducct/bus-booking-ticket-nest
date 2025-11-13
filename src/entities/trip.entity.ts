@@ -7,7 +7,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Station } from './station.entity';
-import { BusCompany } from './bus-company.entity';
 import { Seat } from './seat.entity';
 import { Booking } from './booking.entity';
 
@@ -21,13 +20,6 @@ export enum BusType {
 export class Trip {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @ManyToOne(() => BusCompany, (company) => company.trips)
-  @JoinColumn({ name: 'company_id' })
-  company: BusCompany;
-
-  @Column({ name: 'company_id' })
-  companyId: string;
 
   @ManyToOne(() => Station, (station) => station.tripsFrom)
   @JoinColumn({ name: 'from_station_id' })
