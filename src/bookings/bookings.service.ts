@@ -10,6 +10,7 @@ import { Booking, BookingStatus, PaymentMethod } from '../entities/booking.entit
 import { BookingSeat } from '../entities/booking-seat.entity';
 import { Seat, SeatStatus } from '../entities/seat.entity';
 import { Trip } from '../entities/trip.entity';
+import { StationPoint } from '../entities/station-point.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { SearchBookingDto } from './dto/search-booking.dto';
 
@@ -24,20 +25,41 @@ export class BookingsService {
     private seatsRepository: Repository<Seat>,
     @InjectRepository(Trip)
     private tripsRepository: Repository<Trip>,
+    @InjectRepository(StationPoint)
+    private stationPointsRepository: Repository<StationPoint>,
   ) {}
 
   async create(createBookingDto: CreateBookingDto, userId?: string) {
-    const { tripId, seats, customerName, customerPhone, customerEmail, pickupPoint, dropoffPoint } =
+    const { tripId, seats, customerName, customerPhone, customerEmail, pickupPointId, dropoffPointId } =
       createBookingDto;
 
     // Verify trip exists
     const trip = await this.tripsRepository.findOne({
       where: { id: tripId },
-      relations: ['company'],
+      relations: ['fromStation', 'toStation'],
     });
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
+    }
+
+    // Verify pickup and dropoff points if provided
+    if (pickupPointId) {
+      const pickupPoint = await this.stationPointsRepository.findOne({
+        where: { id: pickupPointId, stationId: trip.fromStationId },
+      });
+      if (!pickupPoint) {
+        throw new BadRequestException('Pickup point not found or not valid for this trip');
+      }
+    }
+
+    if (dropoffPointId) {
+      const dropoffPoint = await this.stationPointsRepository.findOne({
+        where: { id: dropoffPointId, stationId: trip.toStationId },
+      });
+      if (!dropoffPoint) {
+        throw new BadRequestException('Dropoff point not found or not valid for this trip');
+      }
     }
 
     // Verify seats are available
@@ -75,8 +97,8 @@ export class BookingsService {
       customerPhone,
       customerEmail: customerEmail || undefined,
       userId: userId || undefined, // Set userId if user is logged in
-      pickupPoint: pickupPoint || undefined,
-      dropoffPoint: dropoffPoint || undefined,
+      pickupPointId: pickupPointId || undefined,
+      dropoffPointId: dropoffPointId || undefined,
       totalPrice,
       paymentMethod: PaymentMethod.CASH, // Default, can be updated
       status: BookingStatus.PENDING,
@@ -103,7 +125,7 @@ export class BookingsService {
     // Return booking with relations
     return this.bookingsRepository.findOne({
       where: { id: savedBooking.id },
-      relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+      relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
     });
   }
 
@@ -111,7 +133,7 @@ export class BookingsService {
     // Admin can see all bookings
     if (userRole === 'admin') {
       return this.bookingsRepository.find({
-        relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+        relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
         order: { bookingDate: 'DESC' },
       });
     }
@@ -120,9 +142,10 @@ export class BookingsService {
     const queryBuilder = this.bookingsRepository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.trip', 'trip')
-      .leftJoinAndSelect('trip.company', 'company')
       .leftJoinAndSelect('trip.fromStation', 'fromStation')
       .leftJoinAndSelect('trip.toStation', 'toStation')
+      .leftJoinAndSelect('booking.pickupPoint', 'pickupPoint')
+      .leftJoinAndSelect('booking.dropoffPoint', 'dropoffPoint')
       .leftJoinAndSelect('booking.bookingSeats', 'bookingSeats')
       .leftJoinAndSelect('bookingSeats.seat', 'seat')
       .orderBy('booking.bookingDate', 'DESC');
@@ -148,7 +171,7 @@ export class BookingsService {
   async findOne(id: string, userId?: string, userEmail?: string, userRole?: string) {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
-      relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+      relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
     });
 
     if (!booking) {

@@ -53,6 +53,14 @@ export class TripsController {
     return this.tripsService.getSeats(id);
   }
 
+  @Get(':id/points')
+  @Public()
+  @ApiOperation({ summary: 'Lấy danh sách điểm đón/trả của chuyến xe (không cần đăng nhập)' })
+  @ApiResponse({ status: 200, description: 'Danh sách điểm đón và điểm trả' })
+  async getTripPoints(@Param('id') id: string) {
+    return this.tripsService.getTripPoints(id);
+  }
+
   @Post(':id/seats/hold')
   @Public()
   @ApiOperation({ summary: 'Giữ ghế (không cần đăng nhập)' })

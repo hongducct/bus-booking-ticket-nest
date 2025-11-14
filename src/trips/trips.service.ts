@@ -4,6 +4,7 @@ import { Repository, Between, In } from 'typeorm';
 import { Trip } from '../entities/trip.entity';
 import { Station } from '../entities/station.entity';
 import { Seat, SeatStatus } from '../entities/seat.entity';
+import { StationPoint, PointType } from '../entities/station-point.entity';
 import { SearchTripsDto } from './dto/search-trips.dto';
 import { BusType } from '../entities/trip.entity';
 
@@ -16,6 +17,8 @@ export class TripsService {
     private stationsRepository: Repository<Station>,
     @InjectRepository(Seat)
     private seatsRepository: Repository<Seat>,
+    @InjectRepository(StationPoint)
+    private stationPointsRepository: Repository<StationPoint>,
   ) {}
 
   async searchTrips(searchDto: SearchTripsDto) {
@@ -147,6 +150,42 @@ export class TripsService {
       where: { id },
       relations: ['fromStation', 'toStation'],
     });
+  }
+
+  async getTripPoints(tripId: string) {
+    const trip = await this.tripsRepository.findOne({
+      where: { id: tripId },
+      relations: ['fromStation', 'toStation'],
+    });
+
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+
+    // Get pickup points (from station - pickup or both)
+    const pickupPoints = await this.stationPointsRepository.find({
+      where: {
+        stationId: trip.fromStationId,
+        isActive: true,
+        type: In([PointType.PICKUP, PointType.BOTH]),
+      },
+      order: { order: 'ASC', name: 'ASC' },
+    });
+
+    // Get dropoff points (to station - dropoff or both)
+    const dropoffPoints = await this.stationPointsRepository.find({
+      where: {
+        stationId: trip.toStationId,
+        isActive: true,
+        type: In([PointType.DROPOFF, PointType.BOTH]),
+      },
+      order: { order: 'ASC', name: 'ASC' },
+    });
+
+    return {
+      pickupPoints,
+      dropoffPoints,
+    };
   }
 
   async getSeats(tripId: string) {

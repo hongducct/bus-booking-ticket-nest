@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Trip } from './trip.entity';
 import { BookingSeat } from './booking-seat.entity';
+import { StationPoint } from './station-point.entity';
 
 export enum BookingStatus {
   PENDING = 'pending',
@@ -51,11 +52,19 @@ export class Booking {
   @Column({ nullable: true, name: 'user_id', type: 'uuid' })
   userId: string | null; // Optional: null if guest booking
 
-  @Column({ nullable: true })
-  pickupPoint: string;
+  @ManyToOne(() => StationPoint, { nullable: true })
+  @JoinColumn({ name: 'pickup_point_id' })
+  pickupPoint: StationPoint;
 
-  @Column({ nullable: true })
-  dropoffPoint: string;
+  @Column({ nullable: true, name: 'pickup_point_id', type: 'uuid' })
+  pickupPointId: string | null;
+
+  @ManyToOne(() => StationPoint, { nullable: true })
+  @JoinColumn({ name: 'dropoff_point_id' })
+  dropoffPoint: StationPoint;
+
+  @Column({ nullable: true, name: 'dropoff_point_id', type: 'uuid' })
+  dropoffPointId: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice: number;
