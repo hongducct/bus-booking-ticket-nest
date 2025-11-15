@@ -32,44 +32,6 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       true,
     );
 
-    // Create bus_companies table
-    await queryRunner.createTable(
-      new Table({
-        name: 'bus_companies',
-        columns: [
-          {
-            name: 'id',
-            type: 'uuid',
-            isPrimary: true,
-            generationStrategy: 'uuid',
-            default: 'uuid_generate_v4()',
-          },
-          {
-            name: 'name',
-            type: 'varchar',
-          },
-          {
-            name: 'rating',
-            type: 'decimal',
-            precision: 3,
-            scale: 2,
-            default: 0,
-          },
-          {
-            name: 'phone',
-            type: 'varchar',
-            isNullable: true,
-          },
-          {
-            name: 'email',
-            type: 'varchar',
-            isNullable: true,
-          },
-        ],
-      }),
-      true,
-    );
-
     // Create trips table
     await queryRunner.createTable(
       new Table({
@@ -81,10 +43,6 @@ export class InitialSchema1700000000000 implements MigrationInterface {
             isPrimary: true,
             generationStrategy: 'uuid',
             default: 'uuid_generate_v4()',
-          },
-          {
-            name: 'company_id',
-            type: 'uuid',
           },
           {
             name: 'from_station_id',
@@ -278,16 +236,6 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     await queryRunner.createForeignKey(
       'trips',
       new TableForeignKey({
-        columnNames: ['company_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'bus_companies',
-        onDelete: 'CASCADE',
-      }),
-    );
-
-    await queryRunner.createForeignKey(
-      'trips',
-      new TableForeignKey({
         columnNames: ['from_station_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'stations',
@@ -388,7 +336,6 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     await queryRunner.dropTable('bookings');
     await queryRunner.dropTable('seats');
     await queryRunner.dropTable('trips');
-    await queryRunner.dropTable('bus_companies');
     await queryRunner.dropTable('stations');
   }
 }

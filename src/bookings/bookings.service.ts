@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -9,6 +10,7 @@ import { Booking, BookingStatus, PaymentMethod } from '../entities/booking.entit
 import { BookingSeat } from '../entities/booking-seat.entity';
 import { Seat, SeatStatus } from '../entities/seat.entity';
 import { Trip } from '../entities/trip.entity';
+import { StationPoint } from '../entities/station-point.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { SearchBookingDto } from './dto/search-booking.dto';
 
@@ -23,20 +25,41 @@ export class BookingsService {
     private seatsRepository: Repository<Seat>,
     @InjectRepository(Trip)
     private tripsRepository: Repository<Trip>,
+    @InjectRepository(StationPoint)
+    private stationPointsRepository: Repository<StationPoint>,
   ) {}
 
   async create(createBookingDto: CreateBookingDto, userId?: string) {
-    const { tripId, seats, customerName, customerPhone, customerEmail, pickupPoint, dropoffPoint } =
+    const { tripId, seats, customerName, customerPhone, customerEmail, pickupPointId, dropoffPointId } =
       createBookingDto;
 
     // Verify trip exists
     const trip = await this.tripsRepository.findOne({
       where: { id: tripId },
-      relations: ['company'],
+      relations: ['fromStation', 'toStation'],
     });
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
+    }
+
+    // Verify pickup and dropoff points if provided
+    if (pickupPointId) {
+      const pickupPoint = await this.stationPointsRepository.findOne({
+        where: { id: pickupPointId, stationId: trip.fromStationId },
+      });
+      if (!pickupPoint) {
+        throw new BadRequestException('Pickup point not found or not valid for this trip');
+      }
+    }
+
+    if (dropoffPointId) {
+      const dropoffPoint = await this.stationPointsRepository.findOne({
+        where: { id: dropoffPointId, stationId: trip.toStationId },
+      });
+      if (!dropoffPoint) {
+        throw new BadRequestException('Dropoff point not found or not valid for this trip');
+      }
     }
 
     // Verify seats are available
@@ -74,8 +97,8 @@ export class BookingsService {
       customerPhone,
       customerEmail: customerEmail || undefined,
       userId: userId || undefined, // Set userId if user is logged in
-      pickupPoint: pickupPoint || undefined,
-      dropoffPoint: dropoffPoint || undefined,
+      pickupPointId: pickupPointId || undefined,
+      dropoffPointId: dropoffPointId || undefined,
       totalPrice,
       paymentMethod: PaymentMethod.CASH, // Default, can be updated
       status: BookingStatus.PENDING,
@@ -102,7 +125,7 @@ export class BookingsService {
     // Return booking with relations
     return this.bookingsRepository.findOne({
       where: { id: savedBooking.id },
-      relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+      relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
     });
   }
 
@@ -110,23 +133,30 @@ export class BookingsService {
     // Admin can see all bookings
     if (userRole === 'admin') {
       return this.bookingsRepository.find({
-        relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+        relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
         order: { bookingDate: 'DESC' },
       });
     }
 
-    // User can only see their own bookings (by userId or email)
+    // User can only see their own bookings (by userId OR email)
     const queryBuilder = this.bookingsRepository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.trip', 'trip')
-      .leftJoinAndSelect('trip.company', 'company')
       .leftJoinAndSelect('trip.fromStation', 'fromStation')
       .leftJoinAndSelect('trip.toStation', 'toStation')
+      .leftJoinAndSelect('booking.pickupPoint', 'pickupPoint')
+      .leftJoinAndSelect('booking.dropoffPoint', 'dropoffPoint')
       .leftJoinAndSelect('booking.bookingSeats', 'bookingSeats')
       .leftJoinAndSelect('bookingSeats.seat', 'seat')
       .orderBy('booking.bookingDate', 'DESC');
 
-    if (userId) {
+    // If user has userId, show bookings with userId OR email (for bookings made before registration)
+    if (userId && userEmail) {
+      queryBuilder.where(
+        '(booking.userId = :userId OR booking.customerEmail = :email)',
+        { userId, email: userEmail }
+      );
+    } else if (userId) {
       queryBuilder.where('booking.userId = :userId', { userId });
     } else if (userEmail) {
       queryBuilder.where('booking.customerEmail = :email', { email: userEmail });
@@ -138,17 +168,38 @@ export class BookingsService {
     return queryBuilder.getMany();
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string, userEmail?: string, userRole?: string) {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
-      relations: ['trip', 'trip.company', 'trip.fromStation', 'trip.toStation', 'bookingSeats', 'bookingSeats.seat'],
+      relations: ['trip', 'trip.fromStation', 'trip.toStation', 'pickupPoint', 'dropoffPoint', 'bookingSeats', 'bookingSeats.seat'],
     });
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
 
-    return booking;
+    // Admin can see all bookings
+    if (userRole === 'admin') {
+      return booking;
+    }
+
+    // User can only see their own bookings (by userId OR email)
+    if (userId && userEmail) {
+      if (booking.userId === userId || booking.customerEmail === userEmail) {
+        return booking;
+      }
+    } else if (userId && booking.userId === userId) {
+      return booking;
+    } else if (userEmail && booking.customerEmail === userEmail) {
+      return booking;
+    }
+
+    // If no user info or booking doesn't belong to user, throw forbidden
+    if (!userId && !userEmail) {
+      throw new ForbiddenException('You must be logged in to view this booking');
+    }
+
+    throw new ForbiddenException('You do not have permission to view this booking');
   }
 
   async findByOrderId(orderId: string) {
@@ -178,8 +229,8 @@ export class BookingsService {
     return booking;
   }
 
-  async cancel(id: string) {
-    const booking = await this.findOne(id);
+  async cancel(id: string, userId?: string, userEmail?: string, userRole?: string) {
+    const booking = await this.findOne(id, userId, userEmail, userRole);
 
     if (booking.status === BookingStatus.CANCELLED) {
       throw new BadRequestException('Booking is already cancelled');
@@ -203,8 +254,8 @@ export class BookingsService {
     return booking;
   }
 
-  async updatePaymentMethod(id: string, paymentMethod: PaymentMethod) {
-    const booking = await this.findOne(id);
+  async updatePaymentMethod(id: string, paymentMethod: PaymentMethod, userId?: string, userEmail?: string, userRole?: string) {
+    const booking = await this.findOne(id, userId, userEmail, userRole);
 
     booking.paymentMethod = paymentMethod;
     
@@ -214,6 +265,40 @@ export class BookingsService {
     }
 
     return this.bookingsRepository.save(booking);
+  }
+
+  async updateStatus(id: string, status: BookingStatus) {
+    console.log('BookingsService.updateStatus called:', { id, status, statusType: typeof status });
+    
+    const booking = await this.bookingsRepository.findOne({
+      where: { id },
+      relations: ['bookingSeats'],
+    });
+
+    if (!booking) {
+      console.error('Booking not found:', id);
+      throw new NotFoundException('Booking not found');
+    }
+
+    console.log('Current booking status:', booking.status);
+    console.log('Updating to status:', status);
+
+    booking.status = status;
+    const savedBooking = await this.bookingsRepository.save(booking);
+
+    console.log('Booking updated successfully:', { id: savedBooking.id, status: savedBooking.status });
+
+    // If cancelled, release seats
+    if (status === BookingStatus.CANCELLED) {
+      const seatIds = booking.bookingSeats.map((bs) => bs.seatId);
+      await this.seatsRepository.update(
+        { id: In(seatIds) },
+        { status: SeatStatus.AVAILABLE },
+      );
+      console.log('Seats released for cancelled booking');
+    }
+
+    return savedBooking;
   }
 }
 

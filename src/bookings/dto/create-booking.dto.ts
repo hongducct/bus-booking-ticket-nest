@@ -28,12 +28,12 @@ export class CreateBookingDto {
   customerEmail?: string;
 
   @IsOptional()
-  @IsString()
-  pickupPoint?: string;
+  @IsUUID()
+  pickupPointId?: string;
 
   @IsOptional()
-  @IsString()
-  dropoffPoint?: string;
+  @IsUUID()
+  dropoffPointId?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

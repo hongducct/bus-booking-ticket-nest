@@ -6,9 +6,10 @@ import { Booking } from '../entities/booking.entity';
 import { BookingSeat } from '../entities/booking-seat.entity';
 import { Seat } from '../entities/seat.entity';
 import { Trip } from '../entities/trip.entity';
+import { StationPoint } from '../entities/station-point.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Booking, BookingSeat, Seat, Trip])],
+  imports: [TypeOrmModule.forFeature([Booking, BookingSeat, Seat, Trip, StationPoint])],
   controllers: [BookingsController],
   providers: [BookingsService],
 })

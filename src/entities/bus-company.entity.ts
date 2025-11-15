@@ -18,7 +18,19 @@ export class BusCompany {
   @Column({ nullable: true })
   email: string;
 
-  @OneToMany(() => Trip, (trip) => trip.company)
-  trips: Trip[];
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  website: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ nullable: true })
+  logo: string;
+
+  // @OneToMany(() => Trip, (trip) => trip.company)
+  // trips: Trip[];
 }
 

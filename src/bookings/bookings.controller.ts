@@ -15,6 +15,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { SearchBookingDto } from './dto/search-booking.dto';
+import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { BookingStatus } from '../entities/booking.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -56,26 +58,56 @@ export class BookingsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin đơn hàng' })
-  async findOne(@Param('id') id: string) {
-    return this.bookingsService.findOne(id);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy thông tin đơn hàng (yêu cầu đăng nhập)' })
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId;
+    const userEmail = req.user?.email;
+    const userRole = req.user?.role;
+    return this.bookingsService.findOne(id, userId, userEmail, userRole);
   }
 
   @Put(':id/cancel')
-  @ApiOperation({ summary: 'Hủy đơn hàng' })
-  async cancel(@Param('id') id: string) {
-    return this.bookingsService.cancel(id);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Hủy đơn hàng (yêu cầu đăng nhập)' })
+  async cancel(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user?.userId;
+    const userEmail = req.user?.email;
+    const userRole = req.user?.role;
+    return this.bookingsService.cancel(id, userId, userEmail, userRole);
   }
 
   @Put(':id/payment')
-  @ApiOperation({ summary: 'Cập nhật phương thức thanh toán' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật phương thức thanh toán (yêu cầu đăng nhập)' })
   async updatePayment(
     @Param('id') id: string,
     @Body() body: { paymentMethod: string },
+    @Request() req: any,
   ) {
+    const userId = req.user?.userId;
+    const userEmail = req.user?.email;
+    const userRole = req.user?.role;
     return this.bookingsService.updatePaymentMethod(
       id,
       body.paymentMethod as any,
+      userId,
+      userEmail,
+      userRole,
     );
+  }
+
+  @Put(':id/status')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật trạng thái đơn hàng (chỉ admin)' })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateBookingStatusDto,
+    @Request() req: any,
+  ) {
+    console.log('Update status request:', { id, status: updateStatusDto.status, user: req.user });
+    return this.bookingsService.updateStatus(id, updateStatusDto.status);
   }
 }
