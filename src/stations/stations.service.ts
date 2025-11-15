@@ -22,10 +22,10 @@ export class StationsService {
   async getPopularRoutes() {
     // Return popular route combinations
     return [
-      { from: 'Hồ Chí Minh', to: 'Đà Lạt', price: '250,000đ' },
-      { from: 'Hà Nội', to: 'Sapa', price: '320,000đ' },
-      { from: 'Hồ Chí Minh', to: 'Nha Trang', price: '280,000đ' },
-      { from: 'Hà Nội', to: 'Hải Phòng', price: '150,000đ' },
+      { from: 'Hà Tĩnh', to: 'Hà Nội', price: '250,000đ' },
+      { from: 'Hà Nội', to: 'Hà Tĩnh', price: '320,000đ' },
+      { from: 'Hà Tĩnh', to: 'Hà Nội', price: '280,000đ' },
+      { from: 'Hà Nội', to: 'Hà Tĩnh', price: '320,000đ' },
     ];
   }
 

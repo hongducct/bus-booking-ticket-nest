@@ -30,7 +30,7 @@ export class BusCompany {
   @Column({ nullable: true })
   logo: string;
 
-  @OneToMany(() => Trip, (trip) => trip.company)
-  trips: Trip[];
+  // @OneToMany(() => Trip, (trip) => trip.company)
+  // trips: Trip[];
 }
 
